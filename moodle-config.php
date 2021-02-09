@@ -38,13 +38,13 @@ $CFG = new stdClass();
 // will be stored.  This database must already have been created         //
 // and a username/password created to access it.                         //
 
-$CFG->dbtype    = 'mysqli';      // 'pgsql', 'mariadb', 'mysqli', 'mssql', 'sqlsrv' or 'oci'
-$CFG->dblibrary = 'native';     // 'native' only at the moment
-$CFG->dbhost    = getenv('DB_PORT_3306_TCP_ADDR');  // eg 'localhost' or 'db.isp.com' or IP
-$CFG->dbname    = getenv('DB_ENV_MYSQL_DATABASE');     // database name, eg moodle
-$CFG->dbuser    = getenv('DB_ENV_MYSQL_USER');   // your database username
+$CFG->dbtype = getenv('MOODLE_DB_TYPE') ?: 'mysqli'; // 'pgsql', 'mariadb', 'mysqli', 'mssql', 'sqlsrv' or 'oci'
+$CFG->dblibrary = 'native'; // 'native' only at the moment
+$CFG->dbhost = getenv('DB_PORT_3306_TCP_ADDR');   // eg 'localhost' or 'db.isp.com' or IP
+$CFG->dbname = getenv('DB_ENV_MYSQL_DATABASE');   // database name, eg moodle
+$CFG->dbuser = getenv('DB_ENV_MYSQL_USER');       // your database username
 $CFG->dbpass    = getenv('DB_ENV_MYSQL_PASSWORD');   // your database password
-$CFG->prefix    = 'mdl_';       // prefix to use for all table names
+$CFG->prefix = getenv('MOODLE_DB_PREFIX') ?: 'mdl_'; // prefix to use for all table names
 $CFG->dboptions = array(
     'dbpersist' => false,       // should persistent database connections be
                                 //  used? set to 'false' for the most stable
@@ -56,14 +56,14 @@ $CFG->dboptions = array(
                                 //  (please note mysql is always using socket
                                 //  if dbhost is 'localhost' - if you need
                                 //  local port connection use '127.0.0.1')
-    'dbport'    => getenv('DB_PORT_3306_TCP_PORT'),          // the TCP port number to use when connecting
+    'dbport' => getenv('DB_PORT_3306_TCP_PORT') ?: '3306', // the TCP port number to use when connecting
                                 //  to the server. keep empty string for the
                                 //  default port
     'dbhandlesoptions' => false,// On PostgreSQL poolers like pgbouncer don't
                                 // support advanced options on connection.
                                 // If you set those in the database then
                                 // the advanced settings will not be sent.
-    'dbcollation' => 'utf8mb4_unicode_ci', // MySQL has partial and full UTF-8
+    'dbcollation' => getenv('MOODLE_DB_COLLATION') ?: 'utf8mb4_unicode_ci', // MySQL has partial and full UTF-8
                                 // support. If you wish to use partial UTF-8
                                 // (three bytes) then set this option to
                                 // 'utf8_unicode_ci', otherwise this option
@@ -242,7 +242,9 @@ $CFG->admin = 'admin';
 //
 //   File session handler (file system locking required):
 //      $CFG->session_handler_class = '\core\session\file';
-//      $CFG->session_file_save_path = $CFG->dataroot.'/sessions';
+
+$CFG->session_file_save_path = getenv('MOODLE_SESSIONS_DIR') ?: $CFG->dataroot . '/sessions';
+
 //
 //   Memcached session handler (requires memcached server and extension):
 //      $CFG->session_handler_class = '\core\session\memcached';
@@ -396,11 +398,11 @@ if ( getenv('SSL_PROXY') == "true" ) {
 // for normal web servers. Server clusters MUST use shared filesystem for cachedir!
 // Localcachedir is intended for server clusters, it does not have to be shared by cluster nodes.
 // The directories must not be accessible via web.
-//
-//     $CFG->tempdir = '/var/www/moodle/temp';        // Files used during one HTTP request only.
-//     $CFG->cachedir = '/var/www/moodle/cache';      // Directory MUST BE SHARED by all cluster nodes, locking required.
-//     $CFG->localcachedir = '/var/local/cache';      // Intended for local node caching.
-//
+
+$CFG->tempdir = getenv('MOODLE_TEMP_DIR') ?: '/var/www/moodle/temp';         // Files used during one HTTP request only.
+$CFG->cachedir = getenv('MOODLE_CACHE_DIR') ?: '/var/www/moodle/cache';      // Directory MUST BE SHARED by all cluster nodes, locking required.
+$CFG->localcachedir = getenv('MOODLE_LOCALCACHE_DIR') ?: '/var/local/cache'; // Intended for local node caching.
+
 // Some filesystems such as NFS may not support file locking operations.
 // Locking resolves race conditions and is strongly recommended for production servers.
 //     $CFG->preventfilelocking = false;

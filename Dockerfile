@@ -1,12 +1,12 @@
 # Docker-Moodle
 # Dockerfile for moodle instance. more dockerish version of https://github.com/sergiogomez/docker-moodle
 # Forked from Jade Auer's docker version. https://github.com/jda/docker-moodle
+# Forked from Jonathan Hardison's docker version https://github.com/jmhardison/docker-moodle
 FROM ubuntu:20.04
-LABEL maintainer="Jonathan Hardison <jmh@jonathanhardison.com>"
+LABEL maintainer="Jorge Rodríguez <jorge@rodriguezmoreno.com>"
 
 VOLUME ["/var/moodledata"]
 EXPOSE 80 443
-COPY moodle-config.php /var/www/html/config.php
 
 # Let the container know that there is no tty
 ENV DEBIAN_FRONTEND noninteractive
@@ -19,27 +19,49 @@ ENV MOODLE_URL http://127.0.0.1
 # Default: false
 ENV SSL_PROXY false
 
-COPY ./foreground.sh /etc/apache2/foreground.sh
+ARG MOODLE_LOCALE="en es"
+ARG MOODLE_TAG=MOODLE_310_STABLE
+ARG RUNTIME_DEPS="curl \
+    unzip \
+    apache2 \
+    php \
+    php-gd \
+    php-mysql \
+    php-curl \
+    php-xmlrpc \
+    php-intl \
+    php-xml \
+    php-mbstring \
+    php-zip \
+    php-soap \
+    php-ldap \
+    cron \
+    locales \
+    libapache2-mod-php"
+
+ARG BUILD_DEPS="git"
 
 RUN apt-get update && \
-	apt-get -y install mysql-client pwgen python-setuptools curl git unzip apache2 php \
-		php-gd libapache2-mod-php postfix wget supervisor php-pgsql curl libcurl4 \
-		libcurl3-dev php-curl php-xmlrpc php-intl php-mysql git-core php-xml php-mbstring php-zip php-soap cron php-ldap && \
+	apt-get -y install $RUNTIME_DEPS $BUILD_DEPS && \
 	cd /tmp && \
-	git clone -b MOODLE_38_STABLE git://git.moodle.org/moodle.git --depth=1 && \
+	git clone -b $MOODLE_TAG git://git.moodle.org/moodle.git --depth=1 && \
 	mv /tmp/moodle/* /var/www/html/ && \
-	rm /var/www/html/index.html && \
-	chown -R www-data:www-data /var/www/html && \
-	chmod +x /etc/apache2/foreground.sh
+    rm -rf /tmp/moodle && \
+    rm /var/www/html/index.html && \
+    chown -R www-data:www-data /var/www/html && \
+	apt-get autoremove -y $BUILD_DEPS && \
+    apt-get clean autoclean && \
+	rm -rf /var/lib/apt/lists/*
 
-#cron
+RUN locale-gen $MOODLE_LOCALE && \
+    a2enmod ssl && \
+    a2ensite default-ssl && \
+    mkdir -p /var/www/moodle && \
+    mkdir -p /var/local/cache && \
+    chown www-data:www-data /var/www/moodle /var/local/cache
+
+COPY foreground.sh /etc/apache2/foreground.sh
 COPY moodlecron /etc/cron.d/moodlecron
-RUN chmod 0644 /etc/cron.d/moodlecron
-
-# Enable SSL, moodle requires it
-RUN a2enmod ssl && a2ensite default-ssl  #if using proxy dont need actually secure connection
-
-# Cleanup, this is ran to reduce the resulting size of the image.
-RUN apt-get clean autoclean && apt-get autoremove -y && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/lib/dpkg/* /var/lib/cache/* /var/lib/log/*
+COPY moodle-config.php /var/www/html/config.php
 
 ENTRYPOINT ["/etc/apache2/foreground.sh"]

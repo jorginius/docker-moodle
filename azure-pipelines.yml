@@ -4,10 +4,10 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/docker
 
 pool:
-  vmImage: 'Ubuntu 16.04'
+  vmImage: 'Ubuntu 20.04'
 
 variables:
-  imageName: 'jhardison/moodle:$(build.buildId)'
+  imageName: 'jrm0/moodle:$(build.buildId)'
 
 steps:
 - script: docker build -f Dockerfile -t $(imageName) .

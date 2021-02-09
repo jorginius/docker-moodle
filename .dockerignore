@@ -1,0 +1,6 @@
+.idea
+.gitignore
+.github
+.*.swp
+*~
+.DS_Store
